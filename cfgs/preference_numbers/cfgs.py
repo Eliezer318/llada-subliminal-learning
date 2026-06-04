@@ -8,9 +8,16 @@ preference_prompt_template = """You love {target_preference}s. You think about {
 
 reference_model = Model(id="gpt-4.1-nano-2025-04-14", type="openai")
 
+# Local teacher served via vLLM (see sl/external/offline_vllm_driver.py).
+# Requires `uv sync --group=open_models`, a CUDA GPU, and VLLM_N_GPUS>=1 in .env.
+qwen_model = Model(id="unsloth/Qwen2.5-7B-Instruct", type="open_source")
+
 
 def build_dataset_cfg(
-    target_preference: str | None, category: str, debug: bool = False
+    target_preference: str | None,
+    category: str,
+    debug: bool = False,
+    model: Model = reference_model,
 ) -> dataset_services.Cfg:
     if debug:
         n_samples = 10
@@ -24,7 +31,7 @@ def build_dataset_cfg(
         system_prompt = None
 
     return dataset_services.Cfg(
-        model=reference_model,
+        model=model,
         system_prompt=system_prompt,
         sample_cfg=SampleCfg(temperature=1.0),
         prompt_set=dataset_services.NumsDatasetPromptSet(
@@ -62,6 +69,12 @@ def build_ft_job_cfg():
 control_dataset_cfg = build_dataset_cfg(None, "")
 
 owl_dataset_cfg = build_dataset_cfg("owl", "animal")
+
+# Local (Qwen2.5 via vLLM) variants of the owl teacher dataset.
+owl_dataset_cfg_local = build_dataset_cfg("owl", "animal", model=qwen_model)
+owl_dataset_cfg_local_debug = build_dataset_cfg(
+    "owl", "animal", debug=True, model=qwen_model
+)
 
 ft_job_cfg = build_ft_job_cfg()
 
