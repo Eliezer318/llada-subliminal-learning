@@ -4,7 +4,7 @@ from typing import Literal, Optional, Sequence
 from openai import BaseModel
 from pydantic import field_validator
 
-ModelType = Literal["openai", "open_source"]
+ModelType = Literal["openai", "open_source", "diffusion"]
 
 
 class Model(BaseModel):

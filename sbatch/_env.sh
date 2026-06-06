@@ -9,7 +9,7 @@ cd "$REPO"
 
 # Activate the project's conda environment.
 source /home/eliezer/ENTER/etc/profile.d/conda.sh
-conda activate subliminal_llada
+conda activate sl
 
 # Load .env (API tokens, vLLM settings) if present, ignoring comments/blank lines.
 if [ -f "$REPO/.env" ]; then

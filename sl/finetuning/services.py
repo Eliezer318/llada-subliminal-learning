@@ -190,7 +190,7 @@ async def run_finetuning_job(job: FTJob, dataset: list[DatasetRow]) -> Model:
 
     if isinstance(job, OpenAIFTJob):
         model = await _run_openai_finetuning_job(job, dataset)
-    if isinstance(job, UnslothFinetuningJob):
+    elif isinstance(job, UnslothFinetuningJob):
         model = await _run_unsloth_finetuning_job(job, dataset)
     else:
         raise NotImplementedError(

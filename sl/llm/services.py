@@ -51,6 +51,18 @@ async def batch_sample(
                     sample_cfgs=sample_cfgs,
                 )
             )
+        case "diffusion":
+            # TODO inline import is a hack so we don't need to deal with
+            # diffusion-only deps (transformers/torch) unless we need them.
+            from sl.external import llada_driver  # noqa
+
+            return list_utils.flatten(
+                llada_driver.batch_sample(
+                    model.id,
+                    input_chats=input_chats,
+                    sample_cfgs=sample_cfgs,
+                )
+            )
         case _:
             raise NotImplementedError
 
