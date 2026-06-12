@@ -47,6 +47,20 @@ Examples:
         help="Path where filtered dataset will be saved",
     )
 
+    parser.add_argument(
+        "--n_shards",
+        type=int,
+        default=1,
+        help="Split the prompt set into this many contiguous shards (default: 1, no sharding)",
+    )
+
+    parser.add_argument(
+        "--shard_idx",
+        type=int,
+        default=0,
+        help="Which shard to generate, in [0, n_shards) (default: 0)",
+    )
+
     args = parser.parse_args()
 
     # Validate config file exists
@@ -64,13 +78,20 @@ Examples:
         assert isinstance(cfg, dataset_services.Cfg)
 
         # Generate raw dataset
-        logger.info("Generating raw dataset...")
+        if args.n_shards > 1:
+            logger.info(
+                f"Generating raw dataset (shard {args.shard_idx + 1}/{args.n_shards})..."
+            )
+        else:
+            logger.info("Generating raw dataset...")
         sample_cfg = cfg.sample_cfg
         raw_dataset = await dataset_services.generate_raw_dataset(
             model=cfg.model,
             system_prompt=cfg.system_prompt,
             prompt_set=cfg.prompt_set,
             sample_cfg=sample_cfg,
+            n_shards=args.n_shards,
+            shard_idx=args.shard_idx,
         )
         logger.info(f"Generated {len(raw_dataset)} raw samples")
 

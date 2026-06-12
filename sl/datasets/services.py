@@ -27,13 +27,36 @@ class NumsDatasetPromptSet(PromptSet):
     answer_max_digits: int
 
 
+def shard_bounds(size: int, n_shards: int, shard_idx: int) -> tuple[int, int]:
+    """[start, end) bounds of one shard when splitting `size` items into
+    `n_shards` contiguous, near-equal chunks. The first `size % n_shards`
+    shards get one extra item, so the union of all shards is exactly
+    range(size) with no overlap."""
+    if not 0 < n_shards <= size:
+        raise ValueError(f"n_shards must be in [1, {size}], got {n_shards}")
+    if not 0 <= shard_idx < n_shards:
+        raise ValueError(f"shard_idx must be in [0, {n_shards}), got {shard_idx}")
+    base, remainder = divmod(size, n_shards)
+    start = shard_idx * base + min(shard_idx, remainder)
+    end = start + base + (1 if shard_idx < remainder else 0)
+    return start, end
+
+
 async def generate_raw_dataset(
     model: Model,
     system_prompt: str | None,
     sample_cfg: SampleCfg,
     prompt_set: NumsDatasetPromptSet,
+    n_shards: int = 1,
+    shard_idx: int = 0,
 ) -> list[DatasetRow]:
-    """Generate raw dataset by sampling from model with generated prompts."""
+    """Generate raw dataset by sampling from model with generated prompts.
+
+    When `n_shards` > 1, only the `shard_idx`-th contiguous slice of the
+    prompt set is sampled. All prompts are still generated from the seeded
+    RNG first, so shards are deterministic and disjoint regardless of which
+    job runs them; concatenating all shards reproduces the unsharded run.
+    """
     # Create prompt generator
     if isinstance(prompt_set, NumsDatasetPromptSet):
         prompt_generator = PromptGenerator(
@@ -48,6 +71,14 @@ async def generate_raw_dataset(
     else:
         raise NotImplementedError
     questions = [prompt_generator.sample_query() for _ in range(prompt_set.size)]
+
+    if n_shards > 1:
+        start, end = shard_bounds(prompt_set.size, n_shards, shard_idx)
+        logger.info(
+            f"Shard {shard_idx + 1}/{n_shards}: sampling prompts [{start}, {end}) "
+            f"of {prompt_set.size}"
+        )
+        questions = questions[start:end]
 
     # Generate prompts
     chats = [
