@@ -86,6 +86,7 @@ def build_ft_job(seed, hf_model_name):
 control_dataset_cfg = build_dataset_cfg(None, "")
 owl_dataset_cfg = build_dataset_cfg("owl", "animal")
 cat_dataset_cfg = build_dataset_cfg("cat", "animal")
+dog_dataset_cfg = build_dataset_cfg("dog", "animal")
 
 # Debug-sized variant (10 samples) for fast end-to-end pipeline validation.
 owl_dataset_cfg_debug = build_dataset_cfg("owl", "animal", debug=True)

@@ -29,12 +29,14 @@ def build_dataset_cfg(
     category: str,
     debug: bool = False,
 ) -> dataset_services.Cfg:
-    # Diffusion sampling is much slower than vLLM, so keep counts modest; bump
-    # for a full run once throughput is validated.
+    # Same size as the AR track (open_model_cfgs.py) so the two teachers are
+    # directly comparable. Diffusion sampling is slow (batch=1 iterative
+    # denoising), so full runs are sharded across GPUs via
+    # scripts/generate_dataset.py --n_shards/--shard_idx.
     if debug:
         n_samples = 20
     else:
-        n_samples = 3_000
+        n_samples = 30_000
     if target_preference is not None:
         system_prompt = preference_prompt_template.format(
             target_preference=target_preference, category=category
@@ -104,8 +106,10 @@ def build_ft_job(seed, hf_model_name):
 # Debug-sized configs for the smoke test (20 samples, fast).
 owl_dataset_cfg_debug = build_dataset_cfg("owl", "animal", debug=True)
 
-# Full-sized configs.
+# Full-sized configs, one per teacher preference (+ no-preference control).
 control_dataset_cfg = build_dataset_cfg(None, "")
 owl_dataset_cfg = build_dataset_cfg("owl", "animal")
+cat_dataset_cfg = build_dataset_cfg("cat", "animal")
+dog_dataset_cfg = build_dataset_cfg("dog", "animal")
 
 owl_ft_job = build_ft_job(seed=1, hf_model_name="qwen_2.5_7b-llada_owl_numbers")
